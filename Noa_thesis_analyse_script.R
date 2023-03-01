@@ -36,8 +36,6 @@ D_compare <- filter(D, Condition == "Compare")
 D_pctest <- filter(D, Condition == "PCTest")
 D_pctest$BlockBig <- D_pctest$Block
 D_pctest$Block <- D_pctest$BlockBig-238
-## some figures for exploration
-
 
 # ~~~~~~~~~~~~
 # Training: acc en RT : change over blocks ####
@@ -74,19 +72,29 @@ train_RT_line
 # PC: scores en optimaliteit ####
 # ~~~~~~~~~~~~
 
-## calculating the actual scores
+## calculating the actual scores in the PI phase, and the "intertrial RT" (=Time cost)
+scores_ <- D_pctest %>% summarySE(measurevar = "Reaction.Time", groupvars = c("ID","PropIncongr"), na.rm = TRUE) %>%
+  select(ID, PropIncongr, N) %>%
+  mutate(TrialsPerBlock = N/4) %>%
+  mutate(TimeCost = 60/TrialsPerBlock)
+
 scores <- D_pctest %>% summarySE(measurevar = "Reaction.Time", groupvars = c("ID","PropIncongr", "Correct"), na.rm = TRUE) %>%
   filter(Correct==1) %>%
   select(ID, PropIncongr, N) %>%
   rename(Score = N) %>%
   mutate(ScorePerBlock = Score/4) %>%
-  mutate(TimeCost = 60/ScorePerBlock)
-
+  bind_cols(scores_[5])
+rm(scores_)
 ## calculate scores and real
+habit_scores_ <- SageSummarySEwithin(filter(D_train, Day==3), dv="Reaction.Time", wv = c("ID"), subv = "ID") %>%
+  mutate(TrialsPerBlock = N) %>%
+  mutate(TimeCost = 60/TrialsPerBlock)
+
 habit_scores <- SageSummarySEwithin(filter(D_train, Correct == 1, Day==3), dv="Reaction.Time", wv = c("ID"), subv = "ID") %>%
   rename(Score=N) %>%
   mutate(ScorePerBlock = Score) %>%
-  mutate(TimeCost = 60/ScorePerBlock)
+  bind_cols(habit_scores_[8])
+rm(habit_scores_)
 
 GD_scores <- SageSummarySEwithin(filter(D_compare, Correct == 1, Day==3), dv="Reaction.Time", wv = c("ID"), subv = "ID") %>%
   rename(Score=N) %>%
